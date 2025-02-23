@@ -6,6 +6,7 @@ struct ContentView: View {
   @StateObject private var store = TheMetStore()
   @State private var query = "rhino"
   @State private var showQueryField = false
+  @State private var fetchObjectsTask: Task<Void, Error>?
   
   var body: some View {
     NavigationStack {
@@ -48,7 +49,17 @@ struct ContentView: View {
         }
         .alert("Search the Met", isPresented: $showQueryField) {
           TextField("Search the Met", text: $query)
-          Button("Search") { }
+          Button("Search") {
+            //if a fetch task is curently running, stop it
+            fetchObjectsTask?.cancel()
+            //get search objects
+            fetchObjectsTask = Task {
+              do {
+                store.objects = []
+                try await store.fetchObjects(for: query)
+              } catch {}
+            }
+          }
         }
         //opens safari view if not public domain
         .navigationDestination(for: URL.self) { url in
@@ -61,6 +72,15 @@ struct ContentView: View {
           ObjectView(object: object)
         }
       }
+    }
+    //fetches at the launch of app Only
+    .task {
+      do {
+        try await store.fetchObjects(for: query)
+      } catch {}
+    }
+    .overlay {
+      if store.objects.isEmpty { ProgressView() }
     }
   }
 }
