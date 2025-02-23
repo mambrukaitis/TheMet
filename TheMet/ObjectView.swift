@@ -37,15 +37,37 @@ struct ObjectView: View {
 
   var body: some View {
     VStack {
-      Text(object.title)
-        .multilineTextAlignment(.leading)
-        .font(.callout)
-        .frame(minHeight: 44)
+      
+      if let url = URL(string: object.objectURL) {
+        Link(destination: url) {
+          WebIndicatorView(title: object.title)
+            .multilineTextAlignment(.leading)
+            .font(.callout)
+            .frame(minHeight: 44)
+            .padding()
+            .background(Color.metBackground)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+        }
+      } else {
+        Text(object.title)
+          .multilineTextAlignment(.leading)
+          .font(.callout)
+          .frame(minHeight: 44)
+      }
 
       if object.isPublicDomain {
-        PlaceholderView(note: "Display image here")
+        AsyncImage(url: URL(string: object.primaryImageSmall)) { image in
+          image
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+        } placeholder: {
+          Spacer()
+          ProgressView()
+          Spacer()
+        }
       } else {
-        PlaceholderView(note: "Image not in public domain.")
+        PlaceholderView(note: "Image not in public domain. URL not valid.")
       }
 
       Text(object.creditLine)
