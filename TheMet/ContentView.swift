@@ -4,12 +4,13 @@ import SwiftUI
 
 struct ContentView: View {
   @StateObject private var store = TheMetStore()
-  @State private var query = "rhino"
+  @State private var query = "peony"
   @State private var showQueryField = false
   @State private var fetchObjectsTask: Task<Void, Error>?
+  @State private var path = NavigationPath()
   
   var body: some View {
-    NavigationStack {
+    NavigationStack(path: $path) {
       VStack {
         Text("You searched for '\(query)'")
           .padding(5)
@@ -82,6 +83,19 @@ struct ContentView: View {
     .overlay {
       if store.objects.isEmpty { ProgressView() }
     }
+    .onOpenURL { url in
+      if let id = url.host,
+         let object = store.objects.first(
+          where: { String($0.objectID) == id }) {
+        if object.isPublicDomain {
+          path.append(object)
+        } else {
+          if let url = URL(string: object.objectURL) {
+            path.append(url)
+          }
+        }
+      }
+    }
   }
 }
 
@@ -91,15 +105,3 @@ struct ContentView_Previews: PreviewProvider {
   }
 }
 
-struct WebIndicatorView: View {
-  let title: String
-  
-  var body: some View {
-    HStack {
-      Text(title)
-      Spacer()
-      Image(systemName: "rectangle.portrait.and.arrow.right.fill")
-        .font(.footnote)
-    }
-  }
-}
